@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { AUTH_CONFIG } from "@/lib/auth-config";
 import { Loader2, CheckCircle2 } from "lucide-react";
 
 export default function SignupPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -25,7 +27,7 @@ export default function SignupPage() {
 
     try {
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.signUp({
+      const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -39,7 +41,8 @@ export default function SignupPage() {
         return;
       }
 
-      setSuccess(true);
+      if (data.session) { router.replace("/dashboard"); router.refresh(); }
+      else setSuccess(true);
     } catch {
       setError("An unexpected error occurred");
     } finally {
@@ -49,6 +52,8 @@ export default function SignupPage() {
 
   const handleOAuthSignup = async (provider: "google" | "github") => {
     setError(null);
+    setLoading(true);
+    try {
     const supabase = createClient();
     const { error: authError } = await supabase.auth.signInWithOAuth({
       provider,
@@ -57,6 +62,8 @@ export default function SignupPage() {
       },
     });
     if (authError) setError(authError.message);
+    } catch { setError("Unable to start sign-in. Please try again."); }
+    finally { setLoading(false); }
   };
 
   if (success) {
@@ -110,7 +117,7 @@ export default function SignupPage() {
           <form onSubmit={handleSignup} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>
-              <Input id="fullName" type="text" placeholder="John Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+              <Input id="fullName" required maxLength={120} autoComplete="name" type="text" placeholder="John Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

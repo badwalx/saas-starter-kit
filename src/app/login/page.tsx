@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -11,15 +11,18 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { AUTH_CONFIG } from "@/lib/auth-config";
 import { Loader2 } from "lucide-react";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/dashboard";
+  const requested = searchParams.get("redirect") || "/dashboard";
+  const redirect = requested.startsWith("/") && !requested.startsWith("//") && !requested.includes("\\") ? requested : "/dashboard";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [magic, setMagic] = useState(false);
+  const [message, setMessage] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,16 +31,16 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { error: authError } = magic
+        ? await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirect)}` } })
+        : await supabase.auth.signInWithPassword({ email, password });
 
       if (authError) {
         setError(authError.message);
         return;
       }
 
+      if (magic) { setMessage("Check your email for a sign-in link."); return; }
       router.push(redirect);
       router.refresh();
     } catch {
@@ -49,14 +52,18 @@ export default function LoginPage() {
 
   const handleOAuthLogin = async (provider: "google" | "github") => {
     setError(null);
+    setLoading(true);
+    try {
     const supabase = createClient();
     const { error: authError } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?redirect=${redirect}`,
+        redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirect)}`,
       },
     });
     if (authError) setError(authError.message);
+    } catch { setError("Unable to start sign-in. Please try again."); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -96,21 +103,24 @@ export default function LoginPage() {
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
-            <div className="space-y-2">
+            {!magic && <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
                 <Link href="/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
               </div>
               <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
-            </div>
+            </div>}
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {message && <p role="status">{message}</p>}
+            {searchParams.get("error") && <p role="alert">Sign-in failed. Please try again.</p>}
+            {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Log in
+              {magic ? "Send magic link" : "Log in"}
             </Button>
           </form>
+          <Button variant="link" disabled={loading} onClick={() => { setMagic(!magic); setError(null); setMessage(""); }}>{magic ? "Use a password" : "Sign in with a magic link"}</Button>
         </CardContent>
         <CardFooter className="justify-center">
           <p className="text-sm text-muted-foreground">
@@ -122,3 +132,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+export default function LoginPage() { return <Suspense fallback={<p>Loading sign in…</p>}><LoginForm /></Suspense>; }

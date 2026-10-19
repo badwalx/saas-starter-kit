@@ -1,9 +1,12 @@
 import Stripe from "stripe";
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-12-18.acacia",
-  typescript: true,
-});
+let stripeClient: Stripe | undefined;
+export function getStripe() {
+  if (!process.env.STRIPE_SECRET_KEY) throw new Error("Stripe is not configured");
+  return stripeClient ??= new Stripe(process.env.STRIPE_SECRET_KEY, {
+    typescript: true,
+  });
+}
 
 // ============================================
 // Plan Configuration
@@ -22,7 +25,7 @@ export const PLANS = {
   },
   starter: {
     name: "Starter",
-    priceId: process.env.STRIPE_PRICE_ID_STARTER!,
+    priceId: process.env.STRIPE_STARTER_PRICE_ID!,
     price: 29,
     features: [
       "Up to 5,000 API calls/month",
@@ -34,7 +37,7 @@ export const PLANS = {
   },
   pro: {
     name: "Pro",
-    priceId: process.env.STRIPE_PRICE_ID_PRO!,
+    priceId: process.env.STRIPE_PRO_PRICE_ID!,
     price: 79,
     features: [
       "Up to 50,000 API calls/month",
@@ -47,7 +50,7 @@ export const PLANS = {
   },
   business: {
     name: "Business",
-    priceId: process.env.STRIPE_PRICE_ID_BUSINESS!,
+    priceId: process.env.STRIPE_BUSINESS_PRICE_ID!,
     price: 199,
     features: [
       "Unlimited API calls",
@@ -81,7 +84,7 @@ export async function createCheckoutSession({
   successUrl: string;
   cancelUrl: string;
 }) {
-  return stripe.checkout.sessions.create({
+  return getStripe().checkout.sessions.create({
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
@@ -89,6 +92,7 @@ export async function createCheckoutSession({
     success_url: successUrl,
     cancel_url: cancelUrl,
     metadata: { userId },
+    subscription_data: { metadata: { userId } },
   });
 }
 
@@ -100,7 +104,7 @@ export async function createPortalSession({
   customerId: string;
   returnUrl: string;
 }) {
-  return stripe.billingPortal.sessions.create({
+  return getStripe().billingPortal.sessions.create({
     customer: customerId,
     return_url: returnUrl,
   });
@@ -114,7 +118,7 @@ export async function createCustomer({
   email: string;
   userId: string;
 }) {
-  return stripe.customers.create({
+  return getStripe().customers.create({
     email,
     metadata: { userId },
   });

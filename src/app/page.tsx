@@ -249,7 +249,7 @@ export default function LandingPage() {
           </p>
           <Button size="lg" variant="secondary" asChild>
             <Link href="/signup">
--             Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
+              Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
         </div>

@@ -47,6 +47,7 @@ export interface Database {
           stripe_current_period_end: string | null;
           status: string;
           plan_name: string;
+          cancel_at_period_end: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -59,6 +60,7 @@ export interface Database {
           stripe_current_period_end?: string | null;
           status?: string;
           plan_name?: string;
+          cancel_at_period_end?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -69,8 +71,14 @@ export interface Database {
           stripe_current_period_end?: string | null;
           status?: string;
           plan_name?: string;
+          cancel_at_period_end?: boolean;
           updated_at?: string;
         };
+      };
+      api_keys: {
+        Row: { id: string; user_id: string; name: string; key_prefix: string; key_hash: string; created_at: string; revoked_at: string | null };
+        Insert: { id?: string; user_id: string; name: string; key_prefix: string; key_hash: string; created_at?: string; revoked_at?: string | null };
+        Update: { name?: string; revoked_at?: string | null };
       };
       invoices: {
         Row: {

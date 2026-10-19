@@ -7,11 +7,11 @@ export const AUTH_CONFIG = {
   // Enable them in supabase/config.toml first
   providers: {
     google: {
-      enabled: false, // Set true after configuring in Supabase dashboard
+      enabled: true, // Set true after configuring in Supabase dashboard
       name: "Google",
     },
     github: {
-      enabled: false, // Set true after configuring in Supabase dashboard
+      enabled: true, // Set true after configuring in Supabase dashboard
       name: "GitHub",
     },
   },
