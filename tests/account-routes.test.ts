@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 
 const mocks = vi.hoisted(() => ({
-  getUser: vi.fn(), from: vi.fn(), adminFrom: vi.fn(),
+  getUser: vi.fn(), exchange: vi.fn(), from: vi.fn(), adminFrom: vi.fn(),
   checkout: vi.fn(), customer: vi.fn(), retrieve: vi.fn(), construct: vi.fn(),
 }));
-vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ auth: { getUser: mocks.getUser }, from: mocks.from }) }));
+vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({ auth: { getUser: mocks.getUser, exchangeCodeForSession: mocks.exchange }, from: mocks.from }) }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({ from: mocks.adminFrom }) }));
 vi.mock("@/lib/stripe", () => ({
   PLANS: { free: { priceId: null }, starter: { priceId: "price_starter" }, pro: { priceId: "price_pro" }, business: { priceId: "price_business" } },
@@ -15,6 +15,7 @@ vi.mock("@/lib/stripe", () => ({
 import { POST as checkout } from "@/app/api/checkout/route";
 import { GET as listKeys, POST as generateKey, DELETE as revokeKey } from "@/app/api/keys/route";
 import { POST as webhook } from "@/app/api/webhooks/stripe/route";
+import { GET as authCallback } from "@/app/auth/callback/route";
 
 function query(result: object) {
   const chain: Record<string, unknown> = {};
@@ -30,6 +31,25 @@ beforeEach(() => {
   process.env.NEXT_PUBLIC_SITE_URL = "http://localhost:3000";
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
   mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1", email: "test@example.com" } }, error: null });
+});
+
+describe("auth callback", () => {
+  it("exchanges the code and redirects to the dashboard", async () => {
+    mocks.exchange.mockResolvedValue({ error: null });
+    const response = await authCallback(new Request("http://localhost:3000/auth/callback?code=test-code"));
+    expect(mocks.exchange).toHaveBeenCalledWith("test-code");
+    expect(response.headers.get("location")).toBe("http://localhost:3000/dashboard");
+  });
+  it("prevents redirecting to an external host", async () => {
+    mocks.exchange.mockResolvedValue({ error: null });
+    const response = await authCallback(new Request("http://localhost:3000/auth/callback?code=test&redirect=//evil.example"));
+    expect(response.headers.get("location")).toBe("http://localhost:3000/dashboard");
+  });
+  it("returns failed code exchanges to login", async () => {
+    mocks.exchange.mockResolvedValue({ error: new Error("Expired code") });
+    const response = await authCallback(new Request("http://localhost:3000/auth/callback?code=expired"));
+    expect(response.headers.get("location")).toBe("http://localhost:3000/login?error=auth_callback_failed");
+  });
 });
 
 describe("checkout", () => {
