@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,49 +51,39 @@ const FEATURES = [
 
 const PLANS = [
   {
-    name: "Starter",
-    price: 29,
-    period: "/mo",
-    description: "For individual developers",
+    name: "Standard",
+    price: 99,
+    period: " one-time",
+    description: "For indie devs who want to ship fast",
     features: [
-      "Up to 5,000 API calls/month",
-      "Full dashboard",
-      "Email support",
-      "Custom webhooks",
+      "Full source code (Next.js 14 + Supabase + Stripe)",
+      "Coolify/Hetzner deployment configs",
+      "Auth pages (email, OAuth, magic links)",
+      "Dashboard with billing & API keys",
+      "Stripe checkout + webhooks",
+      "Legal pages (privacy, terms)",
+      "Lifetime updates",
     ],
-    cta: "Start Free Trial",
+    cta: "Buy Standard",
+    priceId: "price_1USAXS2UGNI9z9JZa3VSqk9P",
     popular: false,
   },
   {
-    name: "Pro",
-    price: 79,
-    period: "/mo",
-    description: "For growing teams",
+    name: "Premium",
+    price: 149,
+    period: " one-time",
+    description: "For devs who want support + review",
     features: [
-      "Up to 50,000 API calls/month",
-      "Full dashboard + analytics",
-      "Priority support",
-      "Custom webhooks",
-      "Team members (up to 5)",
+      "Everything in Standard",
+      "Priority email support (48h response)",
+      "1-hour deployment assistance call",
+      "Custom Supabase schema review",
+      "Early access to new templates",
+      "Lifetime updates",
     ],
-    cta: "Start Free Trial",
+    cta: "Buy Premium",
+    priceId: "price_1USAXb2UGNI9z9JZpqNovEuz",
     popular: true,
-  },
-  {
-    name: "Business",
-    price: 199,
-    period: "/mo",
-    description: "For scaling companies",
-    features: [
-      "Unlimited API calls",
-      "Full dashboard + analytics",
-      "Dedicated support",
-      "Custom webhooks",
-      "Unlimited team members",
-      "SLA guarantee",
-    ],
-    cta: "Contact Sales",
-    popular: false,
   },
 ];
 
@@ -230,8 +222,16 @@ export default function LandingPage() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" variant={plan.popular ? "default" : "outline"} asChild>
-                  <Link href="/signup">{plan.cta}</Link>
+                <Button className="w-full" variant={plan.popular ? "default" : "outline"} onClick={async () => {
+                  const res = await fetch("/api/checkout", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ priceId: plan.priceId }),
+                  });
+                  const { url } = await res.json();
+                  if (url) window.location.href = url;
+                }}>
+                  {plan.cta}
                 </Button>
               </CardFooter>
             </Card>

@@ -12,55 +12,34 @@ export function getStripe() {
 // Plan Configuration
 // ============================================
 export const PLANS = {
-  free: {
-    name: "Free",
-    priceId: null,
-    price: 0,
+  standard: {
+    name: "Standard",
+    priceId: process.env.STRIPE_STANDARD_PRICE_ID!,
+    price: 99,
+    mode: "payment" as const,
     features: [
-      "Up to 100 API calls/month",
-      "Basic dashboard",
-      "Community support",
+      "Full source code (Next.js 14 + Supabase + Stripe)",
+      "Coolify/Hetzner deployment configs",
+      "Auth pages (email, OAuth, magic links)",
+      "Dashboard with billing & API keys",
+      "Stripe checkout + webhooks",
+      "Legal pages (privacy, terms)",
+      "Lifetime updates",
     ],
-    limits: { apiCalls: 100 },
   },
-  starter: {
-    name: "Starter",
-    priceId: process.env.STRIPE_STARTER_PRICE_ID!,
-    price: 29,
+  premium: {
+    name: "Premium",
+    priceId: process.env.STRIPE_PREMIUM_PRICE_ID!,
+    price: 149,
+    mode: "payment" as const,
     features: [
-      "Up to 5,000 API calls/month",
-      "Full dashboard",
-      "Email support",
-      "Custom webhooks",
+      "Everything in Standard",
+      "Priority email support (48h response)",
+      "1-hour deployment assistance call",
+      "Custom Supabase schema review",
+      "Early access to new templates",
+      "Lifetime updates",
     ],
-    limits: { apiCalls: 5000 },
-  },
-  pro: {
-    name: "Pro",
-    priceId: process.env.STRIPE_PRO_PRICE_ID!,
-    price: 79,
-    features: [
-      "Up to 50,000 API calls/month",
-      "Full dashboard + analytics",
-      "Priority support",
-      "Custom webhooks",
-      "Team members (up to 5)",
-    ],
-    limits: { apiCalls: 50000 },
-  },
-  business: {
-    name: "Business",
-    priceId: process.env.STRIPE_BUSINESS_PRICE_ID!,
-    price: 199,
-    features: [
-      "Unlimited API calls",
-      "Full dashboard + analytics",
-      "Dedicated support",
-      "Custom webhooks",
-      "Unlimited team members",
-      "SLA guarantee",
-    ],
-    limits: { apiCalls: Infinity },
   },
 } as const;
 
@@ -85,14 +64,13 @@ export async function createCheckoutSession({
   cancelUrl: string;
 }) {
   return getStripe().checkout.sessions.create({
-    mode: "subscription",
+    mode: "payment",
     payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
     customer: customerId,
     success_url: successUrl,
     cancel_url: cancelUrl,
     metadata: { userId },
-    subscription_data: { metadata: { userId } },
   });
 }
 
