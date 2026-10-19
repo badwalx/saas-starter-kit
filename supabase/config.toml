@@ -1,0 +1,47 @@
+# A string used to distinguish different Supabase projects on the same host.
+project_id = "saas-starter-kit"
+
+[api]
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public"]
+
+[api.tls]
+enabled = false
+
+[db]
+port = 54322
+
+[studio]
+port = 54323
+
+[inbucket]
+port = 54324
+
+[storage]
+file_size_limit = "50MiB"
+
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback"]
+jwt_expiry = 3600
+enable_signup = true
+email_double_confirm_changes = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+# Uncomment and configure OAuth providers as needed:
+# [auth.external.google]
+# enabled = true
+# client_id = ""
+# secret = ""
+# redirect_uri = "http://localhost:3000/auth/callback"
+
+# [auth.external.github]
+# enabled = true
+# client_id = ""
+# secret = ""
+# redirect_uri = "http://localhost:3000/auth/callback"

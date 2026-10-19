@@ -1,0 +1,39 @@
+{
+  "$schema": "https://coolify.io/schemas/coolify.json",
+  "name": "SaaS Starter Kit",
+  "description": "Next.js + Supabase + Stripe SaaS boilerplate with Coolify deployment",
+  "services": {
+    "app": {
+      "build": {
+        "dockerfile": "Dockerfile"
+      },
+      "ports": [3000],
+      "healthcheck": {
+        "path": "/api/health",
+        "interval": 30
+      },
+      "environment": {
+        "required": [
+          "NEXT_PUBLIC_SUPABASE_URL",
+          "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+          "SUPABASE_SERVICE_ROLE_KEY",
+          "STRIPE_SECRET_KEY",
+          "STRIPE_WEBHOOK_SECRET"
+        ],
+        "optional": [
+          "NEXT_PUBLIC_SITE_URL",
+          "NEXT_PUBLIC_APP_NAME",
+          "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+          "STRIPE_PRICE_ID_STARTER",
+          "STRIPE_PRICE_ID_PRO",
+          "STRIPE_PRICE_ID_BUSINESS"
+        ]
+      }
+    }
+  },
+  "deployment": {
+    "type": "docker-compose",
+    "zero_downtime": true,
+    "rollback_on_failure": true
+  }
+}
